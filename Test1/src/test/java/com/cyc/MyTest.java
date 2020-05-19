@@ -3,11 +3,9 @@ package com.cyc;
 import com.cyc.util.JPAUtil;
 import org.junit.Test;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Persistence;
+import javax.persistence.*;
 import java.io.*;
+import java.util.List;
 import java.util.Properties;
 
 public class MyTest {
@@ -49,13 +47,39 @@ public class MyTest {
     public void testShow(){
         EntityManager em = JPAUtil.getEntityManager();
         try{
-            Customer customer = em.find(Customer.class,1L);
+            Customer customer = em.find(Customer.class,2L);
             System.out.println(customer);
         }catch (Exception e){
             e.printStackTrace();
         }finally {
             em.close();
         }
+    }
+
+    @Test
+    public void testAll(){
+        EntityManager entityManager = null;
+        EntityTransaction transaction = null;
+
+        try{
+            entityManager = JPAUtil.getEntityManager();
+            transaction = entityManager.getTransaction();
+            transaction.begin();
+            //这里数据库名称不应该是数据库里的真实名称，而是与数据库项相关的实体类名
+            String jpql = "from Customer";
+            Query query = entityManager.createQuery(jpql);
+            List<Customer> resultList = query.getResultList();
+            for (Customer customer : resultList) {
+                System.out.println(customer);
+            }
+            transaction.commit();
+        }catch(Exception e){
+            transaction.rollback();
+            e.printStackTrace();
+        }finally {
+            entityManager.close();
+        }
+
     }
 
     @Test
@@ -67,8 +91,6 @@ public class MyTest {
         customer.setCustomIndustry("IT教育");
         customer.setCustomAddress("昌平区北七家镇");
         customer.setCustomPhone("010-84389340");
-
-        Properties p = new Properties();
 
         EntityManager em = null;
         EntityTransaction et = null;
@@ -97,5 +119,33 @@ public class MyTest {
         System.out.println(new File(".").getAbsolutePath());
         String name = getProperty().getProperty("name");
         System.out.println(name);
+        Customer customer = new Customer();
+        customer.setCustomName(getProperty().getProperty("name"));
+        customer.setCustomLevel(getProperty().getProperty("level"));
+        customer.setCustomSource(getProperty().getProperty("source"));
+        customer.setCustomIndustry(getProperty().getProperty("industry"));
+        customer.setCustomAddress(getProperty().getProperty("address"));
+        customer.setCustomPhone(getProperty().getProperty("phone"));
+
+        EntityManager em = null;
+        EntityTransaction et = null;
+
+        try{
+            em = JPAUtil.getEntityManager();
+            //获取事务对象
+            et = em.getTransaction();
+            //开启事务
+            et.begin();
+            //执行操作
+            em.persist(customer);
+            //提交事务
+            et.commit();
+        }catch (Exception e){
+            //事务回滚
+            et.rollback();
+            e.printStackTrace();
+        }finally {
+            em.close();
+        }
     }
 }
